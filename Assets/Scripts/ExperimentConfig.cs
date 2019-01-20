@@ -229,17 +229,6 @@ public class ExperimentConfig
                 break;
         }
 
-        // Later experiment:
-
-        //---- free foraging block
-        //AddFreeForageBlock();   // ***HRS to make this later
-
-        //---- training goes here
-
-        //---- free foraging block
-        //AddFreeForageBlock();
-
-
         // For debugging: print out the final trial sequence in readable text to check it looks ok
         //PrintTrialSequence();
 
@@ -295,21 +284,37 @@ public class ExperimentConfig
     private Vector3[] ChooseNRandomPresentPositions( int nPresents, Vector3[] roomPositions )
     {
         Vector3[] positionsInRoom = new Vector3[nPresents];
+        bool collisionInSpawnLocations;
+        int iterationCounter = 0;
 
+        // generate a random set of N present positions
         for (int i = 0; i < nPresents; i++)
         {
-            positionsInRoom[i] = roomPositions[UnityEngine.Random.Range(0, roomPositions.Length - 1)];
-
-            // make sure that we dont spawn multiple presents on top of each other
-            for (int j = 0; j < i; j++)
+            collisionInSpawnLocations = true;
+            iterationCounter = 0;
+            // make sure the rewards dont spawn on top of each other
+            while (collisionInSpawnLocations)
             {
-                if (positionsInRoom[i] == positionsInRoom[j])
+                iterationCounter++;
+                collisionInSpawnLocations = false;   // benefit of the doubt
+                positionsInRoom[i] = roomPositions[UnityEngine.Random.Range(0, roomPositions.Length - 1)];
+
+                for (int j = 0; j < i; j++)  // just compare to the present positions already generated
                 {
-                    positionsInRoom[i] = roomPositions[UnityEngine.Random.Range(0, roomPositions.Length - 1)];
+                    if (positionsInRoom[i] == positionsInRoom[j])
+                    {
+                        collisionInSpawnLocations = true;   // respawn the present location
+                    }
+                }
+
+                // implement a catchment check for the while loop
+                if (iterationCounter > 40)
+                {
+                    Debug.Log("There was a while loop error");
+                    break;
                 }
             }
         }
-
         return positionsInRoom;
     }
 
@@ -759,6 +764,7 @@ public class ExperimentConfig
         // Note: use this function within another that modulates context such that e.g. for 'cheese', the rooms for room1 and room2 reward are set
 
         bool collisionInSpawnLocations = true;
+        int iterationCounter = 0;
         Vector3 adjacentRewardPosition;
         Vector3 rewardLoc;
 
@@ -783,10 +789,6 @@ public class ExperimentConfig
             star1Rooms[trial] = rewardRoom1;
             star2Rooms[trial] = rewardRoom2;
 
-            // For a randomly selected reward location within each room
-            //star1Positions[trial] = RandomPositionInRoom(rewardRoom1);  
-            //star2Positions[trial] = RandomPositionInRoom(rewardRoom2);
-
             // For specific reward locations (at present/gift locations) within each room
             star1Positions[trial] = RandomPresentInRoom(rewardRoom1);
             star2Positions[trial] = RandomPresentInRoom(rewardRoom2);
@@ -796,77 +798,32 @@ public class ExperimentConfig
             playerStartRooms[trial] = startRoom;
             playerStartPositions[trial] = RandomPositionInRoom(startRoom);
 
+            iterationCounter = 0;
+
             // make sure the player doesn't spawn on one of the rewards
             while ( collisionInSpawnLocations )
             {
+                iterationCounter++;
                 collisionInSpawnLocations = false;   // benefit of the doubt
                 playerStartPositions[trial] = RandomPositionInRoom(startRoom);
                
-                // Check player doesn't spawn on, or adjacent to, a reward
-                for (int rewardInd = 0; rewardInd < 2; rewardInd++)
-                {
-                    if (rewardInd == 0)    // check first reward position
-                    {
-                        rewardLoc = star1Positions[trial];
-                    }
-                    else                   // check second reward position
-                    {
-                        rewardLoc = star2Positions[trial];
-                    }
-                    float[] deltaXPositions = { rewardLoc.x - deltaSquarePosition, rewardLoc.x, rewardLoc.x + deltaSquarePosition };
-                    float[] deltaZPositions = { rewardLoc.z - deltaSquarePosition, rewardLoc.z, rewardLoc.z + deltaSquarePosition };
-
-                    // check all 8 positions adjacent to the reward, and the reward position itself
-                    for (int i = 0; i < 3; i++)
-                    {
-                        for (int j = 0; j < 3; j++)
-                        {
-                            adjacentRewardPosition = new Vector3(deltaXPositions[i], star1Positions[trial].y, deltaZPositions[j]);
-
-                            if (playerStartPositions[trial] == adjacentRewardPosition) 
-                            {
-                                collisionInSpawnLocations = true;   // respawn the player location
-                            }
-                        }
-                    }
-                }
-
-                // make sure player doesnt spawn on or adjacent to a present box (makes above obsolete)
+                // make sure player doesn't spawn on top of a present
                 for (int k = 0; k < presentPositions[trial].Length; k++)
                 {
-                    rewardLoc = presentPositions[trial][k];
-                    float[] deltaXPositions = { rewardLoc.x - deltaSquarePosition, rewardLoc.x, rewardLoc.x + deltaSquarePosition };
-                    float[] deltaZPositions = { rewardLoc.z - deltaSquarePosition, rewardLoc.z, rewardLoc.z + deltaSquarePosition };
-
-                    // check all 8 positions adjacent to the box, and the box position itself
-                    for (int i = 0; i < 3; i++)
-                    {
-                        for (int j = 0; j < 3; j++)
-                        {
-                            adjacentRewardPosition = new Vector3(deltaXPositions[i], rewardLoc.y, deltaZPositions[j]);
-
-                            if (playerStartPositions[trial] == adjacentRewardPosition)
-                            {
-                                collisionInSpawnLocations = true;   // respawn the player location
-                            }
-                        }
-                    }
-                }
-
-                /*
-                // If we decide to have loads of presents, just make sure player doesnt spawn on top of them
-                for (int k = 0; k < presentPositions[trial].Length; k++)
-                {
-                    rewardLoc = presentPositions[trial][k];
-                    if (playerStartPositions[trial] == rewardLoc)
+                    if (playerStartPositions[trial] == presentPositions[trial][k])
                     {
                         collisionInSpawnLocations = true;   // respawn the player location
                     }
                 }
-                */
 
+                // implement a catchment check for the while loop
+                if (iterationCounter > 40)
+                {
+                    Debug.Log("There was a while loop error.");
+                    break;
+                }
             }
-            // orient player towards the centre of the environment (will be maximally informative of location in environment)
+            // orient player towards the centre of the environment (will be most informative of location in environment)
             playerStartOrientations[trial] = findStartOrientation(playerStartPositions[trial]); 
 
         }
