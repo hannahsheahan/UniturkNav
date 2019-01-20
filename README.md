@@ -1,21 +1,44 @@
-# FourRooms
+# UniturkNav
 ##### Unity Editor Version: 2018.1.7f1
 
-This is a Unity project developed for running human behavioural navigation experiments online using webGL. It has been designed to include a general purpose codebase that can easily serve as the basis for other online behavioural experiments in Unity.
+This is one of two Uniturk projects developed for creating behavioural experiments in Unity and deploying them online.
 
-## Overview
+-  **UniturkNav** contains project files for creating sequential decision-making, or continuous online interaction experiments in which the participant takes multiple actions per trial, altering the state of the environment with each action. e.g. online foraging, navigation, motor control, or other sequential decision-making
 
-- You will need to edit filepath.path in filepath.cs script for an appropriate  location for the log file.
+-  If you are planning to run an experiment involving a single response per trial, or in which the environment does not need to visibly adjust online within each trial, you will probably find the repo **UniturkDM** a better place to start. e.g. for experiments in which a visual stimulus appears on the screen and the participant chooses 1/n button responses per trial.
 
-- To run an experiment, you must start the game from the persistent scene, 'Persistent'
-- The gameplay is controlled *almost* entirely from the singleton GameController.cs. There is some gameplay that is local to short scripts attached to objects in different scenes, but where possible these scripts trigger functions within GameController.cs to keep gameplay centralised and readable. A finite-state-machine tracks within-trial changes to the game state.
 
-- The data management is operated through DataController.cs. Any configuration file that needs to be read or loaded, any online changes to trial list sequencing, and any saving of the data (to either the Summerfield Lab webserver or to a location on your local computer), is performed here. There is one instance of DataController that persists between scenes and is fetched/found by other smaller scripts when needed - so it is effectively a singleton but implemented slightly differently.
+## Downloading and installing
+1. Download and install the _free_ version of Unity.
+2. Download and install Visual Studio (it’s a nice text editor for C#, but feel free to use any other text editor you like e.g. Atom, Xcode…).
+3. If you have a Github account, select which package you want here: 
+```diff
++ gitHub.com/hannahsheahan/UniturkFM
+```
+or
+```diff
++ github.com/hannahsheahan/UniturkNav
+```
 
-- The experiment configuration is controlled through the script ExperimentConfig.cs, which specifies the trial sequencing, randomisation, and experiment-specific controlled variables e.g. the duration and frequency of restbreaks.
+and fork it to your account. 
 
-- When playing the game, movements are controlled with the arrow keys. The space-bar is used to unwrap gift boxes. There may be small differences in the sensitivity of different computers to these key inputs. These keys should automatically adjust to the keypad/game control you are using, but if not then these can be adjusted using Edit > ProjectSettings > Input. Sensitivity can be edited within the FPSController in each scene. Make sure you edit ALL FPSController instances if you do this!
+4. Open the Unity project on your computer. 
 
-## Notes:
+5. Add all Scenes to the build settings:   _File_ > _Build Settings_ > Drag and drop all scenes into the _Scenes in Build_ box > _Close_ the Build Settings.
 
-- At the start of each major script I have left some notes on things that remain to be tidied, but shouldn't massively change functionality. I will address these at some point...
+## Setting a data save path
+1. Edit the script _filepath.cs_, and replace the path string with path to your local project folder.
+2. Create a folder called _‘data’_ within the project folder on your local machine. 
+3. Open the script _DataController.cs_ and edit the variable _‘baseFilePath’_,  to change the local file saving path to the newly created folder _‘data’_ in your project folder.
+4. If you want to save data online, upload the data writing script _fromunity.php_ (located under _Assets_ > _php_ ) to the server (for Summerfield lab members, this should be under _/www/sandbox/tasks/YOURUSERNAME/YOURTASK/lib/php/_ ). Run 'chmod ugo+rw FOLDERNAME' from this directory in the terminal to sort out file permissions, where FOLDERNAME corresponds to the place on the server where you want to store data (thanks Timo!).
+5. If you want to save data online, edit the _fromunity.php_ script so that the path to your data folder on the server is correct.
+6. In the _DataController.cs_ script, find the function _‘SaveData()’_ and either: A) uncomment the line under ‘v1.0’ if you want to save data to your local machine, OR  B) if you want to save data on the web server (necessary for deploying this online),  uncomment the line under ‘v2.1’ and edit the web server file path for where you want to store the .php writing script, i.e. _sandbox/tasks/YOURUSERNAME/YOURTASK/lib/php/fromunity.php_ . Best to start by trying local file saving to check everything is working smoothly first.
+
+
+## Running the experiment
+1. Open (double-click) the scene _‘Persistent’_ in the Project menu. 
+2. Run the scene from within Unity (either press the play button at top of Unity, or press cmd+P ). To quit running the scene press cmd+P again. Experiments must always be run from within the Persistent scene.
+3. The previous step should have created a datafile either locally in your ‘data’ folder or on the web server, based on your previous data save path choices. Go and check it out to make sure that this happened and take a look at what’s inside it.
+4. You should now have a basic functioning experiment! To understand how these projects are structured architecturally and how to develop from here, I will be releasing a flow diagram at some point, or you can just ask me.
+
+Any questions or problems, please let me know or send me a pull request  :)
